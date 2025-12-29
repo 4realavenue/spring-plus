@@ -12,10 +12,11 @@ import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,6 +24,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class CommentService {
 
+    private static final Logger log = LoggerFactory.getLogger(CommentService.class);
     private final TodoRepository todoRepository;
     private final CommentRepository commentRepository;
 
@@ -48,18 +50,18 @@ public class CommentService {
     }
 
     public List<CommentResponse> getComments(long todoId) {
+
         List<Comment> commentList = commentRepository.findByTodoIdWithUser(todoId);
 
-        List<CommentResponse> dtoList = new ArrayList<>();
-        for (Comment comment : commentList) {
-            User user = comment.getUser();
-            CommentResponse dto = new CommentResponse(
-                    comment.getId(),
-                    comment.getContents(),
-                    new UserResponse(user.getId(), user.getEmail())
-            );
-            dtoList.add(dto);
-        }
-        return dtoList;
+        List<CommentResponse> responseDtoList = commentList.stream()
+                .map(comment -> {
+                    User user = comment.getUser();
+                    return new CommentResponse(
+                            comment.getId(), comment.getContents(), new UserResponse(user.getId(), user.getEmail())
+                    );
+                })
+                .toList();
+
+        return responseDtoList;
     }
 }
